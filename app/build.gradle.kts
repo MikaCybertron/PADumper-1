@@ -11,19 +11,8 @@ android {
         minSdk = 24
         targetSdk = 31
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.1"
 
-    }
-
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
     }
 
     compileOptions {

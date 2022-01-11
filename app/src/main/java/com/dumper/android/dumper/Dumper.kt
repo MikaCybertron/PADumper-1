@@ -5,9 +5,8 @@ import com.dumper.android.utils.longToHex
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.RandomAccessFile
-import java.lang.StringBuilder
+import java.math.BigDecimal
 import java.nio.ByteBuffer
-import java.nio.charset.Charset
 
 /*
    An Modified Tools.kt from "https://github.com/BryanGIG/KMrite"
@@ -21,16 +20,18 @@ class Dumper(private val pkg: String) {
         val log = StringBuilder()
         try {
             getProcessID()
+
             log.appendLine("PID : ${mem.pid}")
             parseMap()
             if (mem.eAddress < mem.sAddress) {
-                throw NegativeArraySizeException("Failed parsing startAddress & endAddress")
+                throw IndexOutOfBoundsException("Failed parsing startAddress & endAddress")
             }
+
             mem.size = mem.eAddress - mem.sAddress
-            log.appendLine("FILE : ${file}")
+            log.appendLine("FILE : $file")
             log.appendLine("Start Address : ${mem.sAddress.longToHex()}")
             log.appendLine("End Address : ${mem.eAddress.longToHex()}")
-            log.appendLine("Size Memory : ${mem.size}")
+            log.appendLine("Size Memory : ${mem.size.longToHex()}")
 
             if (mem.sAddress > 1L && mem.eAddress > 1L) {
                 val path = File("/sdcard/Download/$pkg")
@@ -41,7 +42,7 @@ class Dumper(private val pkg: String) {
                 val filechannel = rAcess.channel
 
                 log.appendLine("Dumping...")
-                val buff = ByteBuffer.allocate(mem.size.toInt())
+                val buff = ByteBuffer.allocate(BigDecimal(mem.size).intValueExact())
                 filechannel.read(buff, mem.sAddress)
 
                 val outputStream = pathOut.outputStream()

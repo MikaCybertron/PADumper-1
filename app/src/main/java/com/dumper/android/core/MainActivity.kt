@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.Intent.ACTION_VIEW
 import android.content.ServiceConnection
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.*
 import android.util.Log
@@ -14,6 +13,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.list.listItemsSingleChoice
+import com.dumper.android.R
 import com.dumper.android.core.DumperService.Companion.FILE_NAME
 import com.dumper.android.core.DumperService.Companion.IS_FIX_NAME
 import com.dumper.android.core.DumperService.Companion.IS_METADATA_NAME
@@ -44,12 +44,12 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
             return
         }
 
-        allApps = getRunningApps()
+        allApps = packageManager.getRunningApps()
 
         with(mainBind) {
             setContentView(root)
             github.setOnClickListener {
-                val intent = Intent(ACTION_VIEW, Uri.parse("https://github.com/BryanGIG/LibDumper"))
+                val intent = Intent(ACTION_VIEW, Uri.parse("https://github.com/BryanGIG/PADumper"))
                 startActivity(intent)
             }
 
@@ -70,8 +70,9 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
                         processText.setText(allApps.values.toList()[index])
                         dismiss()
                     }
+
                     negativeButton(text = "Refresh") {
-                        allApps = getRunningApps()
+                        allApps = packageManager.getRunningApps()
                         dismiss()
                         selectApps.performClick()
                     }

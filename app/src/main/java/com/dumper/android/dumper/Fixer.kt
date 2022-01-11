@@ -9,10 +9,10 @@ class Fixer(private val nativeDir:String, private val files: File, private val m
 
     fun fixDump(): String {
         val param = arrayOf(
-            "${nativeDir}${File.separator}libfixer.so",
+            "${nativeDir}/libfixer.so",
             files.absolutePath,
             memory.sAddress.longToHex(),
-            "${Environment.getExternalStorageDirectory().path}/Download/${files.getOriginalName()}_fix${files.getFileExtension()}"
+            "/sdcard/Download/${files.nameWithoutExtension}_fix${files.extension}"
         )
         val proc = Runtime.getRuntime().exec(param)
         proc.waitFor()
