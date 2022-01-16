@@ -12,6 +12,7 @@ fun Long.longToHex(): String {
 }
 
 fun PackageManager.getRunningApps(): Map<String, String> {
+    //TODO : https://stackoverflow.com/questions/25721994/get-info-about-all-running-processes
     val apps = getInstalledApplications(PackageManager.GET_META_DATA)
     val appFinal = apps.filter { !it.isInvalid() }
     return appFinal.associate { Pair(getApplicationLabel(it).toString(), it.packageName) }.toSortedMap()
