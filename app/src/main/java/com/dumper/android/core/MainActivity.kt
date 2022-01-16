@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
             }
 
             dumpButton.setOnClickListener {
+                initRoot()
                 val process = processText.text.toString()
                 if (process.isNotBlank()) {
                     consoleList.add("Process : $process")
@@ -125,6 +126,7 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
 
         override fun onServiceDisconnected(name: ComponentName) {
             Log.d(TAG, "service onServiceDisconnected")
+            consoleList.add("Root Service Disconnected!")
             remoteMessenger = null
         }
     }

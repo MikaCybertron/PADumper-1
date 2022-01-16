@@ -31,7 +31,6 @@ class DumperService : RootService(), Handler.Callback {
         val isAutoFix = requestData.getBoolean(IS_FIX_NAME, false)
         val isDumpMetadata = requestData.getBoolean(IS_METADATA_NAME, false)
         val nativeDir = requestData.getString(LIBRARY_DIR_NAME)
-
         val reply = Message.obtain()
         val data = Bundle()
         if (process != null) {
@@ -40,7 +39,7 @@ class DumperService : RootService(), Handler.Callback {
             logOutput.appendLine(dumper.dumpFile(isAutoFix, nativeDir))
             if (isDumpMetadata) {
                 dumper.file = "global-metadata.dat"
-                logOutput.appendLine(dumper.dumpFile(isAutoFix, nativeDir))
+                logOutput.appendLine(dumper.dumpFile(false, null))
             }
             data.putString(DUMP_LOG, logOutput.toString())
         }else{

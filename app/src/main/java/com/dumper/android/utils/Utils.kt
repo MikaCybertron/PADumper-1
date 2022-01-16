@@ -14,7 +14,7 @@ fun Long.longToHex(): String {
 fun PackageManager.getRunningApps(): Map<String, String> {
     val apps = getInstalledApplications(PackageManager.GET_META_DATA)
     val appFinal = apps.filter { !it.isInvalid() }
-    return appFinal.associate { Pair(getApplicationLabel(it).toString(), it.packageName) }
+    return appFinal.associate { Pair(getApplicationLabel(it).toString(), it.packageName) }.toSortedMap()
 }
 
 fun ApplicationInfo.isInvalid(): Boolean {

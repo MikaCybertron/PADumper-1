@@ -102,7 +102,6 @@
                 android:layout_weight="1"
                 android:minHeight="48dp"
                 android:text="@string/fix_elf_result"
-                android:visibility="gone"
                 android:textColor="@color/black" />
 
             <CheckBox
