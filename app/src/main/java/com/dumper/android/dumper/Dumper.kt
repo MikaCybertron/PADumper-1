@@ -1,5 +1,6 @@
 package com.dumper.android.dumper
 
+import com.dumper.android.utils.DEFAULT_DIR
 import com.dumper.android.utils.Memory
 import com.dumper.android.utils.longToHex
 import java.io.File
@@ -33,7 +34,7 @@ class Dumper(private val pkg: String) {
             log.appendLine("Size Memory : ${mem.size.longToHex()}")
 
             if (mem.sAddress > 1L && mem.eAddress > 1L) {
-                val path = File("/sdcard/Download/$pkg")
+                val path = File("$DEFAULT_DIR/$pkg")
                 if (!path.exists()) path.mkdirs()
 
                 val pathOut = File("${path.absolutePath}/${mem.sAddress.longToHex()}-$file")
@@ -55,7 +56,7 @@ class Dumper(private val pkg: String) {
                     log.appendLine("Fixing...")
                     log.appendLine(Fixer(nativeDir!!, pathOut, mem.sAddress.longToHex()).fixDump())
                 }
-                log.appendLine("Done. Saved at ${pathOut.absolutePath}")
+                log.appendLine("Done: ${pathOut.absolutePath}")
             }
         } catch (e: Exception) {
             log.appendLine(e.stackTraceToString())

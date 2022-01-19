@@ -11,16 +11,20 @@ import android.util.Log
 import android.widget.ScrollView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.MutableLiveData
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.list.listItemsSingleChoice
-import com.dumper.android.R
-import com.dumper.android.core.DumperService.Companion.FILE_NAME
-import com.dumper.android.core.DumperService.Companion.IS_FIX_NAME
-import com.dumper.android.core.DumperService.Companion.IS_METADATA_NAME
-import com.dumper.android.core.DumperService.Companion.LIBRARY_DIR_NAME
-import com.dumper.android.core.DumperService.Companion.MSG_GETINFO
-import com.dumper.android.core.DumperService.Companion.PROCESS_NAME
+import com.dumper.android.core.RootServices.Companion.FILE_NAME
+import com.dumper.android.core.RootServices.Companion.IS_ALL_PROCESS
+import com.dumper.android.core.RootServices.Companion.IS_DUMP
+import com.dumper.android.core.RootServices.Companion.IS_FIX_NAME
+import com.dumper.android.core.RootServices.Companion.IS_METADATA_NAME
+import com.dumper.android.core.RootServices.Companion.LIBRARY_DIR_NAME
+import com.dumper.android.core.RootServices.Companion.MSG_GETINFO
+import com.dumper.android.core.RootServices.Companion.PROCESS_NAME
+import com.dumper.android.core.RootServices.Companion.REQ_TYPE
 import com.dumper.android.databinding.ActivityMainBinding
+import com.dumper.android.process.ProcessData
 import com.dumper.android.utils.*
 import com.topjohnwu.superuser.CallbackList
 import com.topjohnwu.superuser.Shell
@@ -28,7 +32,7 @@ import com.topjohnwu.superuser.ipc.RootService
 
 class MainActivity : AppCompatActivity(), Handler.Callback {
     private lateinit var mainBind: ActivityMainBinding
-    private lateinit var allApps: Map<String, String>
+    private val allApps = MutableLiveData<ArrayList<ProcessData>>()
     private var remoteMessenger: Messenger? = null
     private val myMessenger = Messenger(Handler(Looper.getMainLooper(), this))
     private val conn = MSGConnection()
@@ -44,8 +48,6 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
             return
         }
 
-        allApps = packageManager.getRunningApps()
-
         with(mainBind) {
             setContentView(root)
             github.setOnClickListener {
@@ -58,27 +60,44 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
                 val process = processText.text.toString()
                 if (process.isNotBlank()) {
                     consoleList.add("Process : $process")
-                    runService(process, libName.text.toString(), autoFix.isChecked)
+                    sendRequestDump(process, libName.text.toString(), autoFix.isChecked)
                 } else {
                     consoleList.add("put pkg name!")
                 }
             }
 
             selectApps.setOnClickListener {
+                initRoot()
+                sendRequestAllProcess()
+            }
+
+            allApps.observe(this@MainActivity, {
+                it.sortBy { list -> list.appName }
+
+                val appNames = it.map { processData ->
+                    if (processData.processName.contains(":")) {
+                        "${processData.appName} (${processData.processName.substringAfter(":")})"
+                    } else
+                        processData.appName
+                }
+
                 MaterialDialog(this@MainActivity).show {
                     title(text = "Select Your Apps")
-                    listItemsSingleChoice(items = allApps.keys.toList(), waitForPositiveButton = false) { _, index, _ ->
-                        processText.setText(allApps.values.toList()[index])
+                    listItemsSingleChoice(
+                        items = appNames,
+                        waitForPositiveButton = false
+                    ) { _, index, _ ->
+                        processText.setText(it[index].processName)
                         dismiss()
                     }
 
                     negativeButton(text = "Refresh") {
-                        allApps = packageManager.getRunningApps()
+                        sendRequestAllProcess()
                         dismiss()
                         selectApps.performClick()
                     }
                 }
-            }
+            })
         }
     }
 
@@ -86,7 +105,7 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
         if (Shell.rootAccess()) {
             if (remoteMessenger == null) {
                 serviceQueued = true
-                val intent = Intent(this, DumperService::class.java)
+                val intent = Intent(this, RootServices::class.java)
                 RootService.bind(intent, conn)
                 return true
             }
@@ -94,9 +113,22 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
         return false
     }
 
-    private fun runService(process: String, dump_file: String?, autoFix: Boolean) {
+    private fun sendRequestAllProcess() {
         val message: Message = Message.obtain(null, MSG_GETINFO)
 
+        message.data.putString(REQ_TYPE, IS_ALL_PROCESS)
+        message.replyTo = myMessenger
+        try {
+            remoteMessenger?.send(message)
+        } catch (e: RemoteException) {
+            Log.e(TAG, "Remote error", e)
+        }
+    }
+
+    private fun sendRequestDump(process: String, dump_file: String?, autoFix: Boolean) {
+        val message: Message = Message.obtain(null, MSG_GETINFO)
+
+        message.data.putString(REQ_TYPE, IS_DUMP)
         message.data.putString(PROCESS_NAME, process)
         message.data.putString(FILE_NAME, dump_file)
         message.data.putBoolean(IS_METADATA_NAME, mainBind.metadata.isChecked)
@@ -140,8 +172,13 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
     }
 
     override fun handleMessage(p0: Message): Boolean {
-        val output = p0.data.getString(DumperService.DUMP_LOG, "")
-        consoleList.add(output)
+        p0.data.classLoader = this@MainActivity.classLoader
+        if (p0.data.getString(REQ_TYPE) == IS_DUMP)
+            consoleList.add(p0.data.getString(RootServices.DUMP_LOG, ""))
+        else if (p0.data.getString(REQ_TYPE) == IS_ALL_PROCESS) {
+            allApps.value = p0.data.getParcelableArrayList(RootServices.LIST_ALL_PROCESS)
+        }
+
         return false
     }
 
