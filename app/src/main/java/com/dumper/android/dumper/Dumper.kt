@@ -97,16 +97,27 @@ class Dumper(private val pkg: String) {
     }
 
     private fun getProcessID() {
-        val process = Runtime.getRuntime().exec(arrayOf("pidof", mem.pkg))
-        val reader = process.inputStream.bufferedReader()
-        val buff = reader.readLines().joinToString("\n")
-        reader.close()
-        process.waitFor()
-        process.destroy()
-        if (buff.isNotBlank())
-            mem.pid = buff.toInt()
-        else
-            throw IllegalArgumentException("Make sure your proccess package is running !\n")
+        val dProc = File("/proc")
+        if (dProc.exists()) {
+            val dPID = dProc.listFiles()
+            if (dPID?.isEmpty() != false){
+                throw RuntimeException("Failed To Open : ${dProc.path}")
+            }
+            for (line in dPID) {
+                if (line.name.matches("\\d+".toRegex())) {
+                    val files2 = File("${line.path}/cmdline")
+                    if (files2.exists()) {
+                        val cmdline = files2.readText()
+                        if (cmdline.contains(pkg)) {
+                            mem.pid = line.name.toInt()
+                            break
+                        }
+                    }
+                }
+            }
+        } else {
+            throw FileNotFoundException("Failed To Open : ${dProc.path}")
+        }
     }
 }
 

@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
                 sendRequestAllProcess()
             }
 
-            allApps.observe(this@MainActivity, {
+            allApps.observe(this@MainActivity) {
                 it.sortBy { list -> list.appName }
 
                 val appNames = it.map { processData ->
@@ -97,7 +97,7 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
                         selectApps.performClick()
                     }
                 }
-            })
+            }
         }
     }
 

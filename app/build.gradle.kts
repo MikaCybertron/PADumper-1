@@ -12,7 +12,7 @@ android {
         minSdk = 24
         targetSdk = 31
         versionCode = 1
-        versionName = "1.0.1"
+        versionName = "1.0.2"
         ndk {
             abiFilters.addAll(arrayOf("armeabi-v7a","arm64-v8a"))
         }
@@ -32,10 +32,11 @@ android {
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.18.1"
+            version = "3.22.1"
         }
     }
     ndkVersion = "23.1.7779620"
+    namespace = "com.dumper.android"
 }
 
 dependencies {
