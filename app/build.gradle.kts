@@ -11,8 +11,8 @@ android {
         applicationId = "com.dumper.android"
         minSdk = 24
         targetSdk = 31
-        versionCode = 1
-        versionName = "1.0.2"
+        versionCode = 2
+        versionName = "2.0.0"
         ndk {
             abiFilters.addAll(arrayOf("armeabi-v7a","arm64-v8a"))
         }
@@ -25,9 +25,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    buildFeatures.viewBinding = true
+    buildFeatures {
+        viewBinding = true
+    }
 
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 
     externalNativeBuild {
         cmake {
@@ -42,9 +46,8 @@ android {
 dependencies {
     //UI
     implementation("androidx.core:core-ktx:1.7.0")
-    implementation("androidx.appcompat:appcompat:1.4.1")
+    implementation("androidx.fragment:fragment-ktx:1.4.1")
     implementation("com.google.android.material:material:1.5.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.3")
     implementation("com.afollestad.material-dialogs:core:3.3.0")
 
     //Root 

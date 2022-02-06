@@ -1,21 +1,25 @@
 package com.dumper.android.dumper
 
+import androidx.core.text.isDigitsOnly
 import com.dumper.android.utils.DEFAULT_DIR
 import com.dumper.android.utils.Memory
-import com.dumper.android.utils.longToHex
+import com.dumper.android.utils.toHex
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 
-/*
-   An Modified Tools.kt from "https://github.com/BryanGIG/KMrite"
-*/
-
 class Dumper(private val pkg: String) {
     private val mem = Memory(pkg)
     var file: String = ""
 
+    /**
+     * Dump the memory to a file
+     *
+     * @param autoFix if true, the dumped file will be fixed after dumping
+     * @param nativeDir require if autoFix is true, the native library directory
+     * @return log of the dump
+     */
     fun dumpFile(autoFix: Boolean, nativeDir: String?): String {
         val log = StringBuilder()
         try {
@@ -24,20 +28,20 @@ class Dumper(private val pkg: String) {
             log.appendLine("PID : ${mem.pid}")
             parseMap()
             if (mem.eAddress < mem.sAddress) {
-                throw IndexOutOfBoundsException("Failed parsing startAddress & endAddress")
+                throw Exception("Failed parsing startAddress & endAddress")
             }
 
             mem.size = mem.eAddress - mem.sAddress
             log.appendLine("FILE : $file")
-            log.appendLine("Start Address : ${mem.sAddress.longToHex()}")
-            log.appendLine("End Address : ${mem.eAddress.longToHex()}")
-            log.appendLine("Size Memory : ${mem.size.longToHex()}")
+            log.appendLine("Start Address : ${mem.sAddress.toHex()}")
+            log.appendLine("End Address : ${mem.eAddress.toHex()}")
+            log.appendLine("Size Memory : ${mem.size.toHex()}")
 
             if (mem.sAddress > 1L && mem.eAddress > 1L) {
                 val path = File("$DEFAULT_DIR/$pkg")
                 if (!path.exists()) path.mkdirs()
 
-                val pathOut = File("${path.absolutePath}/${mem.sAddress.longToHex()}-$file")
+                val pathOut = File("${path.absolutePath}/${mem.sAddress.toHex()}-$file")
                 val outputStream = pathOut.outputStream()
 
                 val inputAccess = RandomAccessFile("/proc/${mem.pid}/mem", "r")
@@ -52,9 +56,9 @@ class Dumper(private val pkg: String) {
                 inputAccess.close()
                 outputStream.close()
 
-                if (autoFix) {
+                if (file.contains(".so") and autoFix) {
                     log.appendLine("Fixing...")
-                    log.appendLine(Fixer(nativeDir!!, pathOut, mem.sAddress.longToHex()).fixDump())
+                    log.appendLine(Fixer(nativeDir!!, pathOut, mem.sAddress.toHex()).fixDump())
                 }
                 log.appendLine("Done: ${pathOut.absolutePath}")
             }
@@ -65,6 +69,11 @@ class Dumper(private val pkg: String) {
         return log.toString()
     }
 
+    /**
+     * Parsing the memory map
+     *
+     * @throws FileNotFoundException if required file is not found in memory map
+     */
     private fun parseMap() {
         val files = File("/proc/${mem.pid}/maps")
         if (files.exists()) {
@@ -73,20 +82,22 @@ class Dumper(private val pkg: String) {
                 if (file == "global-metadata.dat")
                     it.contains(file)
                 else
-                    //libil2cpp startAddress must r-xp
+                //libil2cpp startAddress must r-xp
                     it.contains("r-xp") && it.contains(file)
             }
             val endAddr = lines.findLast { it.contains(file) }
             val regex = "\\p{XDigit}+-\\p{XDigit}+".toRegex()
-            if (startAddr == null || endAddr == null) {
-                throw FileNotFoundException("$file not found in ${files.path}")
+
+            if (startAddr == null) {
+                throw Exception("Start Address not found")
+            } else if (endAddr == null) {
+                throw Exception("End Address not found")
             } else {
-                regex.find(startAddr)?.value?.run {
+                regex.find(startAddr)!!.value.run {
                     val result = split("-")
                     mem.sAddress = result[0].toLong(16)
                 }
-
-                regex.find(endAddr)?.value?.run {
+                regex.find(endAddr)!!.value.run {
                     val result = split("-")
                     mem.eAddress = result[1].toLong(16)
                 }
@@ -96,19 +107,25 @@ class Dumper(private val pkg: String) {
         }
     }
 
+    /**
+     * Get the process ID
+     *
+     * @throws Exception if failed to get the process ID
+     * @throws FileNotFoundException if "/proc" failed to open
+     */
     private fun getProcessID() {
         val dProc = File("/proc")
         if (dProc.exists()) {
             val dPID = dProc.listFiles()
-            if (dPID?.isEmpty() != false){
-                throw RuntimeException("Failed To Open : ${dProc.path}")
+            if (dPID.isNullOrEmpty()) {
+                throw Exception("Failed To Open : ${dProc.path}")
             }
             for (line in dPID) {
-                if (line.name.matches("\\d+".toRegex())) {
-                    val files2 = File("${line.path}/cmdline")
-                    if (files2.exists()) {
-                        val cmdline = files2.readText()
-                        if (cmdline.contains(pkg)) {
+                if (line.name.isDigitsOnly()) {
+                    val cmdline = File("${line.path}/cmdline")
+                    if (cmdline.exists()) {
+                        val textCmd = cmdline.readText()
+                        if (textCmd.contains(pkg)) {
                             mem.pid = line.name.toInt()
                             break
                         }

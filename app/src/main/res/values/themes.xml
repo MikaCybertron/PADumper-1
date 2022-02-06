@@ -15,4 +15,13 @@
         <item name="android:forceDarkAllowed" tools:targetApi="29">false</item>
         <!-- Customize your theme here. -->
     </style>
+
+    <style name="Theme.PADumper.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.PADumper.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.PADumper.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>
