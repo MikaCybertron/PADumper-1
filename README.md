@@ -8,7 +8,7 @@ This dumper is made for il2cpp game but you can use it in any app you want
 - Put the ELF Name (default="libil2cpp.so")
 - Check "global-metadata.dat" if you want dump unity metadata from memory
 - Dump and wait process to finish
-- Result will be in "/sdcard/Download/<'package name'>/<'startAddress-fileName'>"
+- Result will be in "/sdcard/PADumper/<'package name'>/<'startAddress-fileName'>"
 
 ## Credits
 - [libsu](https://github.com/topjohnwu/libsu)
