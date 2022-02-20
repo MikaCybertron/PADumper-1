@@ -30,8 +30,6 @@ import com.topjohnwu.superuser.ipc.RootService
 
 class MainActivity : AppCompatActivity(), Handler.Callback {
     private lateinit var mainBind: ActivityMainBinding
-    private lateinit var consoleFragment: ConsoleFragment
-    private lateinit var memoryFragment: MemoryFragment
     private var remoteMessenger: Messenger? = null
     private val myMessenger = Messenger(Handler(Looper.getMainLooper(), this))
     private val conn = MSGConnection()
@@ -56,13 +54,11 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
             setContentView(root)
             setSupportActionBar(toolbar)
 
-            memoryFragment = MemoryFragment()
-            consoleFragment = ConsoleFragment()
-
             if (savedInstanceState == null) {
                 supportFragmentManager.commit {
-                    add(R.id.contentContainer, consoleFragment)
-                    add(R.id.contentContainer, memoryFragment)
+                    add(R.id.contentContainer, ConsoleFragment.instance, ConsoleFragment.Companion::class.java.simpleName)
+                    add(R.id.contentContainer, MemoryFragment.instance, MemoryFragment.Companion::class.java.simpleName)
+                    hide(ConsoleFragment.instance)
                 }
             }
 
@@ -70,16 +66,16 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
                 supportFragmentManager.commit {
                     hide(
                         when (it.itemId) {
-                            R.id.action_memory -> consoleFragment
-                            R.id.action_console -> memoryFragment
-                            else -> throw Exception("Unknown item selected")
+                            R.id.action_memory -> ConsoleFragment.instance
+                            R.id.action_console -> MemoryFragment.instance
+                            else -> throw IllegalArgumentException("Unknown item selected")
                         }
                     )
                     show(
                         when (it.itemId) {
-                            R.id.action_memory -> memoryFragment
-                            R.id.action_console -> consoleFragment
-                            else -> throw Exception("Unknown item selected")
+                            R.id.action_memory -> MemoryFragment.instance
+                            R.id.action_console -> ConsoleFragment.instance
+                            else -> throw IllegalArgumentException("Unknown item selected")
                         }
                     )
                 }

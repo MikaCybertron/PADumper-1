@@ -14,6 +14,9 @@ import com.dumper.android.databinding.FragmentConsoleBinding
 import com.dumper.android.utils.console
 
 class ConsoleFragment : Fragment() {
+    companion object {
+        val instance by lazy { ConsoleFragment() }
+    }
     lateinit var consoleBind: FragmentConsoleBinding
 
     override fun onCreateView(
@@ -21,7 +24,7 @@ class ConsoleFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        consoleBind = FragmentConsoleBinding.inflate(layoutInflater, container, true)
+        consoleBind = FragmentConsoleBinding.inflate(layoutInflater, container, false)
         return consoleBind.root
     }
 

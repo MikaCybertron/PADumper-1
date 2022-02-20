@@ -14,6 +14,9 @@ import com.dumper.android.utils.allApps
 import com.dumper.android.utils.console
 
 class MemoryFragment : Fragment() {
+    companion object {
+        val instance by lazy { MemoryFragment() }
+    }
     private lateinit var memBinding: FragmentMemoryBinding
 
     override fun onCreateView(
