@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.*
 import android.util.Log
 import android.view.Menu
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import com.dumper.android.R
@@ -19,13 +18,13 @@ import com.dumper.android.core.RootServices.Companion.MSG_DUMP_PROCESS
 import com.dumper.android.core.RootServices.Companion.MSG_GET_PROCESS_LIST
 import com.dumper.android.core.RootServices.Companion.PROCESS_NAME
 import com.dumper.android.databinding.ActivityMainBinding
+import com.dumper.android.dumper.Fixer
 import com.dumper.android.process.ProcessData
 import com.dumper.android.ui.ConsoleFragment
 import com.dumper.android.ui.MemoryFragment
 import com.dumper.android.utils.TAG
 import com.dumper.android.utils.allApps
 import com.dumper.android.utils.console
-import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ipc.RootService
 
 class MainActivity : AppCompatActivity(), Handler.Callback {
@@ -45,39 +44,32 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
         super.onCreate(savedInstanceState)
         mainBind = ActivityMainBinding.inflate(layoutInflater)
 
-        if (!initRoot()) {
-            Toast.makeText(this, "Please Grant Permission Root!", Toast.LENGTH_SHORT).show()
-            return
-        }
+        initService()
 
         mainBind.apply {
             setContentView(root)
             setSupportActionBar(toolbar)
 
-            if (savedInstanceState == null) {
-                supportFragmentManager.commit {
-                    add(R.id.contentContainer, ConsoleFragment.instance, ConsoleFragment.Companion::class.java.simpleName)
-                    add(R.id.contentContainer, MemoryFragment.instance, MemoryFragment.Companion::class.java.simpleName)
-                    hide(ConsoleFragment.instance)
-                }
+            supportFragmentManager.commit {
+                replace(R.id.contentContainer, MemoryFragment.instance)
             }
 
             bottomBar.setOnItemSelectedListener {
                 supportFragmentManager.commit {
-                    hide(
-                        when (it.itemId) {
-                            R.id.action_memory -> ConsoleFragment.instance
-                            R.id.action_console -> MemoryFragment.instance
-                            else -> throw IllegalArgumentException("Unknown item selected")
-                        }
+                    setCustomAnimations(
+                        R.anim.fade_in,
+                        R.anim.fade_out,
+                        R.anim.fade_in,
+                        R.anim.fade_out
                     )
-                    show(
+                    replace(R.id.contentContainer,
                         when (it.itemId) {
                             R.id.action_memory -> MemoryFragment.instance
                             R.id.action_console -> ConsoleFragment.instance
                             else -> throw IllegalArgumentException("Unknown item selected")
                         }
                     )
+                    addToBackStack(null)
                 }
                 true
             }
@@ -93,16 +85,13 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
         }
     }
 
-    fun initRoot(): Boolean {
-        if (Shell.rootAccess()) {
-            if (remoteMessenger == null) {
-                serviceQueued = true
-                val intent = Intent(this, RootServices::class.java)
-                RootService.bind(intent, conn)
-                return true
-            }
+    private fun initService() {
+        Fixer.extractLibs(this)
+        if (remoteMessenger == null) {
+            serviceQueued = true
+            val intent = Intent(this, RootServices::class.java)
+            RootService.bind(intent, conn)
         }
-        return false
     }
 
     fun sendRequestAllProcess() {
@@ -123,7 +112,7 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
             putStringArray(LIST_FILE, dump_file)
             if (autoFix) {
                 putBoolean(IS_FIX_NAME, true)
-                putString(LIBRARY_DIR_NAME, applicationInfo.nativeLibraryDir)
+                putString(LIBRARY_DIR_NAME, "${filesDir.path}/SoFixer")
             }
         }
 
@@ -158,7 +147,9 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
             MSG_GET_PROCESS_LIST -> {
                 val allProcess =
                     message.data.getParcelableArrayList<ProcessData>(RootServices.LIST_ALL_PROCESS)
-                allApps.value = allProcess
+                if (allProcess != null) {
+                    MemoryFragment.instance.showProcess(allProcess)
+                }
             }
             MSG_DUMP_PROCESS -> {
                 val dump = message.data.getString(RootServices.DUMP_LOG)

@@ -10,10 +10,10 @@ import java.util.ArrayList
 class Process(private val ctx: Context) {
     fun getAllProcess(): ArrayList<ProcessData> {
         val finalAppsBundle = ArrayList<ProcessData>()
-        val actvityManager = ctx.getSystemService(ACTIVITY_SERVICE) as ActivityManager
-        val procInfos = actvityManager.runningAppProcesses
+        val activityManager = ctx.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        val processInfo = activityManager.runningAppProcesses
 
-        procInfos.forEach {
+        processInfo.forEach {
             try {
                 val apps =
                     ctx.packageManager.getApplicationInfo(it.processName.substringBefore(":"), 0)
@@ -24,8 +24,7 @@ class Process(private val ctx: Context) {
                     )
                     finalAppsBundle.add(data)
                 }
-            } catch (ex: Exception) {
-            }
+            } catch (_: Exception) { }
         }
         return finalAppsBundle
     }

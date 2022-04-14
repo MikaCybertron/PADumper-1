@@ -10,6 +10,8 @@ import android.view.ViewGroup
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.transition.TransitionInflater
+import com.dumper.android.R
 import com.dumper.android.databinding.FragmentConsoleBinding
 import com.dumper.android.utils.console
 
@@ -17,7 +19,8 @@ class ConsoleFragment : Fragment() {
     companion object {
         val instance by lazy { ConsoleFragment() }
     }
-    lateinit var consoleBind: FragmentConsoleBinding
+
+    private lateinit var consoleBind: FragmentConsoleBinding
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -27,14 +30,13 @@ class ConsoleFragment : Fragment() {
         consoleBind = FragmentConsoleBinding.inflate(layoutInflater, container, false)
         return consoleBind.root
     }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         console.observe(viewLifecycleOwner) {
             consoleBind.console.append("$it\n")
             Handler(Looper.getMainLooper()).postDelayed({
-                consoleBind.scrollView.fullScroll(View.FOCUS_DOWN) }, 10)
-
+                consoleBind.scrollView.fullScroll(View.FOCUS_DOWN)
+            }, 10)
         }
     }
 }

@@ -56,10 +56,10 @@ class Dumper(private val pkg: String) {
                 inputAccess.close()
                 outputStream.close()
 
-                if (file.contains(".so") and autoFix) {
-                    log.appendLine("Fixing...")
-                    log.appendLine(Fixer(nativeDir!!, pathOut, mem.sAddress.toHex()).fixDump())
-                }
+//                if (file.contains(".so") and autoFix) {
+//                    log.appendLine("Fixing...")
+//                    log.appendLine(Fixer(nativeDir!!, pathOut, mem.sAddress.toHex()).fixDump())
+//                }
                 log.appendLine("Done: ${pathOut.absolutePath}")
             }
         } catch (e: Exception) {

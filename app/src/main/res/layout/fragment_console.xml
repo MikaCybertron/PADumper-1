@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/background_dark"
     android:orientation="vertical"
     tools:context=".ui.ConsoleFragment">
 
@@ -23,7 +22,6 @@
                 android:layout_margin="10dp"
                 android:fontFamily="monospace"
                 android:padding="8dp"
-                android:textColor="@color/white"
                 android:textSize="12sp" />
         </HorizontalScrollView>
     </androidx.core.widget.NestedScrollView>
