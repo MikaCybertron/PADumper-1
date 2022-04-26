@@ -5,8 +5,6 @@ import com.dumper.android.process.ProcessData
 
 const val TAG = "PADumper"
 const val DEFAULT_DIR = "/sdcard/PADumper"
-val allApps = MutableLiveData<ArrayList<ProcessData>>()
-val console = MutableLiveData<String>()
 
 fun Long.toHex(): String {
     return this.toString(16)

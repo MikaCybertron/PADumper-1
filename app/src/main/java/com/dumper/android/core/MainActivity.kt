@@ -1,15 +1,13 @@
 package com.dumper.android.core
 
-import android.content.ComponentName
 import android.content.Intent
 import android.content.Intent.ACTION_VIEW
-import android.content.ServiceConnection
 import android.net.Uri
 import android.os.*
-import android.util.Log
 import android.view.Menu
-import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.commit
 import com.dumper.android.R
 import com.dumper.android.core.RootServices.Companion.IS_FIX_NAME
@@ -20,19 +18,19 @@ import com.dumper.android.core.RootServices.Companion.MSG_GET_PROCESS_LIST
 import com.dumper.android.core.RootServices.Companion.PROCESS_NAME
 import com.dumper.android.databinding.ActivityMainBinding
 import com.dumper.android.dumper.Fixer
-import com.dumper.android.process.ProcessData
+import com.dumper.android.messager.MSGConnection
+import com.dumper.android.messager.MSGReceiver
 import com.dumper.android.ui.ConsoleFragment
 import com.dumper.android.ui.MemoryFragment
-import com.dumper.android.utils.TAG
-import com.dumper.android.utils.console
+import com.dumper.android.ui.viewmodel.ConsoleViewModel
 import com.topjohnwu.superuser.ipc.RootService
 
-class MainActivity : AppCompatActivity(), Handler.Callback {
+class MainActivity : AppCompatActivity() {
     private lateinit var mainBind: ActivityMainBinding
-    private var remoteMessenger: Messenger? = null
-    private val myMessenger = Messenger(Handler(Looper.getMainLooper(), this))
-    private val conn = MSGConnection()
-    private var serviceQueued = false
+    var remoteMessenger: Messenger? = null
+    private val myMessenger = Messenger(Handler(Looper.getMainLooper(), MSGReceiver(this)))
+    private val conn = MSGConnection(this)
+    val console: ConsoleViewModel by viewModels()
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         super.onCreateOptionsMenu(menu)
@@ -44,8 +42,6 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
         super.onCreate(savedInstanceState)
         mainBind = ActivityMainBinding.inflate(layoutInflater)
 
-        initService()
-
         with(mainBind) {
             setContentView(root)
             setSupportActionBar(toolbar)
@@ -53,6 +49,8 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
             supportFragmentManager.commit {
                 replace(R.id.contentContainer, MemoryFragment.instance)
             }
+
+            initService()
 
             bottomBar.setOnItemSelectedListener {
                 supportFragmentManager.commit {
@@ -76,7 +74,6 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
 
             toolbar.setOnMenuItemClickListener {
                 if (it.itemId == R.id.github) {
-
                     startActivity(
                         Intent(
                             ACTION_VIEW,
@@ -89,14 +86,9 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
         }
     }
 
-    private fun rebuildService() {
-
-    }
-
     private fun initService() {
         Fixer.extractLibs(this)
         if (remoteMessenger == null) {
-            serviceQueued = true
             val intent = Intent(this, RootServices::class.java)
             RootService.bind(intent, conn)
         }
@@ -105,13 +97,8 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
     fun sendRequestAllProcess() {
         val message = Message.obtain(null, MSG_GET_PROCESS_LIST)
         message.replyTo = myMessenger
-        try {
-            remoteMessenger?.send(message)
-        } catch (e: RemoteException) {
-            Log.e(TAG, "Remote error", e)
-        }
+        remoteMessenger?.send(message)
     }
-
 
     fun sendRequestDump(process: String, dump_file: Array<String>, autoFix: Boolean) {
         val message = Message.obtain(null, MSG_DUMP_PROCESS)
@@ -126,47 +113,7 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
         }
 
         message.replyTo = myMessenger
-        try {
-            remoteMessenger?.send(message)
-        } catch (e: RemoteException) {
-            Log.e(TAG, "Remote error", e)
-        }
-    }
-
-
-    inner class MSGConnection : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName, service: IBinder) {
-            console.value = "rootService: connected"
-            remoteMessenger = Messenger(service)
-            if (serviceQueued) {
-                serviceQueued = false
-            }
-        }
-
-        override fun onServiceDisconnected(name: ComponentName) {
-            console.value = "rootService: disconnected"
-            remoteMessenger = null
-        }
-    }
-
-    override fun handleMessage(message: Message): Boolean {
-        message.data.classLoader = this@MainActivity.classLoader
-
-        when (message.what) {
-            MSG_GET_PROCESS_LIST -> {
-                val allProcess =
-                    message.data.getParcelableArrayList<ProcessData>(RootServices.LIST_ALL_PROCESS)
-                if (allProcess != null) {
-                    MemoryFragment.instance.showProcess(allProcess)
-                }
-            }
-            MSG_DUMP_PROCESS -> {
-                val dump = message.data.getString(RootServices.DUMP_LOG)
-                console.value = dump
-                Toast.makeText(this, "Dump Complete!", Toast.LENGTH_SHORT).show()
-            }
-        }
-        return false
+        remoteMessenger?.send(message)
     }
 
     override fun onDestroy() {

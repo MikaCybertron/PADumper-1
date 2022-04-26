@@ -1,26 +1,26 @@
 package com.dumper.android.ui
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.transition.TransitionInflater
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.list.listItemsSingleChoice
-import com.dumper.android.R
+import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import com.dumper.android.core.MainActivity
 import com.dumper.android.databinding.FragmentMemoryBinding
 import com.dumper.android.process.ProcessData
-import com.dumper.android.utils.allApps
-import com.dumper.android.utils.console
+import com.dumper.android.ui.viewmodel.ConsoleViewModel
+import com.dumper.android.ui.viewmodel.MemoryViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MemoryFragment : Fragment() {
     companion object {
         val instance by lazy { MemoryFragment() }
     }
+
+    private val vm: MemoryViewModel by viewModels()
+    private val consoles: ConsoleViewModel by activityViewModels()
 
     private lateinit var memBinding: FragmentMemoryBinding
 
@@ -34,12 +34,16 @@ class MemoryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         memBinding.apply {
+            vm.selectedApps.observe(viewLifecycleOwner) {
+                processText.editText?.setText(it)
+            }
+
             dumpButton.setOnClickListener {
                 val process = processText.editText!!.text.toString()
                 if (process.isNotBlank()) {
-                    console.value = "=========================="
-                    console.value = "Process : $process"
+                    consoles.appendLine("==========================\nProcess : $process")
 
                     val listDump = mutableListOf(libName.editText!!.text.toString())
                     if (metadata.isChecked)
@@ -51,7 +55,7 @@ class MemoryFragment : Fragment() {
                         autoFix.isChecked
                     )
                 } else {
-                    console.value = "put pkg name!"
+                    consoles.appendError("Process name is empty")
                 }
             }
 
@@ -75,7 +79,7 @@ class MemoryFragment : Fragment() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Select process")
             .setSingleChoiceItems(appNames.toTypedArray(), -1) { dialog, which ->
-                memBinding.processText.editText?.setText(list[which].processName)
+                vm.selectedApps.value = list[which].processName
                 dialog.dismiss()
             }
             .show()

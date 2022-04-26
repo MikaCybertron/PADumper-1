@@ -3,17 +3,17 @@ package com.dumper.android.ui
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ScrollView
-import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.transition.TransitionInflater
-import com.dumper.android.R
+import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.viewModelScope
 import com.dumper.android.databinding.FragmentConsoleBinding
-import com.dumper.android.utils.console
+import com.dumper.android.ui.viewmodel.ConsoleViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class ConsoleFragment : Fragment() {
     companion object {
@@ -21,6 +21,7 @@ class ConsoleFragment : Fragment() {
     }
 
     private lateinit var consoleBind: FragmentConsoleBinding
+    private val vm: ConsoleViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -32,11 +33,12 @@ class ConsoleFragment : Fragment() {
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        console.observe(viewLifecycleOwner) {
+        vm.console.observe(viewLifecycleOwner) {
             consoleBind.console.append("$it\n")
-            Handler(Looper.getMainLooper()).postDelayed({
+            vm.viewModelScope.launch {
+                delay(10)
                 consoleBind.scrollView.fullScroll(View.FOCUS_DOWN)
-            }, 10)
+            }
         }
     }
 }
