@@ -15,15 +15,15 @@ class MSGReceiver(private val activity: MainActivity) : Handler.Callback {
 
         when (message.what) {
             RootServices.MSG_GET_PROCESS_LIST -> {
-                val allProcess =
-                    message.data.getParcelableArrayList<ProcessData>(RootServices.LIST_ALL_PROCESS)
-                if (allProcess != null) {
-                    MemoryFragment.instance.showProcess(allProcess)
-                }
+                message.data.getParcelableArrayList<ProcessData>(RootServices.LIST_ALL_PROCESS)
+                    ?.let {
+                        MemoryFragment.instance.showProcess(it)
+                    }
             }
             RootServices.MSG_DUMP_PROCESS -> {
                 message.data.getString(RootServices.DUMP_LOG)?.let {
                     activity.console.append(it)
+                    activity.console.appendLine("==========================")
                     Toast.makeText(activity, "Dump Complete!", Toast.LENGTH_SHORT).show()
                 }
             }

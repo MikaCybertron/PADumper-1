@@ -74,7 +74,8 @@ class Dumper(private val pkg: String) {
                         log.appendLine("Fixer error : \n${fixer[1].joinToString("\n")}")
                     }
                 }
-                log.appendLine("Done: ${pathOut.absolutePath}")
+                log.appendLine("Dump Success")
+                log.appendLine("Output: ${pathOut.parent}")
             }
         } catch (e: Exception) {
             log.appendLine(e.stackTraceToString())

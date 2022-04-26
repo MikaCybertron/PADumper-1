@@ -1,8 +1,5 @@
 package com.dumper.android.utils
 
-import androidx.lifecycle.MutableLiveData
-import com.dumper.android.process.ProcessData
-
 const val TAG = "PADumper"
 const val DEFAULT_DIR = "/sdcard/PADumper"
 
