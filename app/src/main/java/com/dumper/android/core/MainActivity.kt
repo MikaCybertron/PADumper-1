@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.*
 import android.util.Log
 import android.view.Menu
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import com.dumper.android.R
@@ -23,7 +24,6 @@ import com.dumper.android.process.ProcessData
 import com.dumper.android.ui.ConsoleFragment
 import com.dumper.android.ui.MemoryFragment
 import com.dumper.android.utils.TAG
-import com.dumper.android.utils.allApps
 import com.dumper.android.utils.console
 import com.topjohnwu.superuser.ipc.RootService
 
@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
 
         initService()
 
-        mainBind.apply {
+        with(mainBind) {
             setContentView(root)
             setSupportActionBar(toolbar)
 
@@ -62,27 +62,35 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
                         R.anim.fade_in,
                         R.anim.fade_out
                     )
-                    replace(R.id.contentContainer,
+                    replace(
+                        R.id.contentContainer,
                         when (it.itemId) {
                             R.id.action_memory -> MemoryFragment.instance
                             R.id.action_console -> ConsoleFragment.instance
                             else -> throw IllegalArgumentException("Unknown item selected")
                         }
                     )
-                    addToBackStack(null)
                 }
                 true
             }
 
             toolbar.setOnMenuItemClickListener {
                 if (it.itemId == R.id.github) {
-                    val intent =
-                        Intent(ACTION_VIEW, Uri.parse("https://github.com/BryanGIG/PADumper"))
-                    startActivity(intent)
+
+                    startActivity(
+                        Intent(
+                            ACTION_VIEW,
+                            Uri.parse("https://github.com/BryanGIG/PADumper")
+                        )
+                    )
                 }
                 true
             }
         }
+    }
+
+    private fun rebuildService() {
+
     }
 
     private fun initService() {
@@ -103,6 +111,7 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
             Log.e(TAG, "Remote error", e)
         }
     }
+
 
     fun sendRequestDump(process: String, dump_file: Array<String>, autoFix: Boolean) {
         val message = Message.obtain(null, MSG_DUMP_PROCESS)
@@ -154,7 +163,7 @@ class MainActivity : AppCompatActivity(), Handler.Callback {
             MSG_DUMP_PROCESS -> {
                 val dump = message.data.getString(RootServices.DUMP_LOG)
                 console.value = dump
-                console.value = "=========================="
+                Toast.makeText(this, "Dump Complete!", Toast.LENGTH_SHORT).show()
             }
         }
         return false

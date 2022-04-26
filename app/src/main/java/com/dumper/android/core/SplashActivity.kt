@@ -12,13 +12,6 @@ import kotlin.system.exitProcess
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : Activity() {
-    init {
-        Shell.enableVerboseLogging = BuildConfig.DEBUG;
-        Shell.setDefaultBuilder(
-            Shell.Builder.create().setFlags(Shell.FLAG_MOUNT_MASTER)
-        )
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Shell.getShell {

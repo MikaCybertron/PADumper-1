@@ -5,32 +5,30 @@ import android.system.Os.chmod
 import com.topjohnwu.superuser.Shell
 import java.io.File
 
-class Fixer(
-    private val nativeDir: String,
-    private val dumpFile: File,
-    private val startAddress: String
-) {
+object Fixer {
 
-    companion object {
-        fun extractLibs(ctx: Context) {
-            val libs = ctx.assets.list("SoFixer")
-            libs?.forEach { lib ->
-                ctx.assets.open("SoFixer/$lib").use { input ->
-                    File(ctx.filesDir, lib).outputStream().use { output ->
-                        input.copyTo(output)
-                        chmod(ctx.filesDir.absolutePath + "/" + lib,755)
-                    }
+
+    fun extractLibs(ctx: Context) {
+        val libs = ctx.assets.list("SoFixer")
+        libs?.forEach { lib ->
+            ctx.assets.open("SoFixer/$lib").use { input ->
+                File(ctx.filesDir, lib).outputStream().use { output ->
+                    input.copyTo(output)
+                    Shell.cmd("chmod 755 ${ctx.filesDir.absolutePath}/$lib").exec()
                 }
             }
         }
     }
 
-    fun fixDump(is32: Boolean): Array<List<String>> {
+
+    fun fixDump(
+        nativeDir: String, dumpFile: File,
+        startAddress: String, is32: Boolean
+    ): Array<List<String>> {
         val outList = mutableListOf<String>()
         val errList = mutableListOf<String>()
-
         Shell.cmd("'$nativeDir/${if (is32) "SoFixer32" else "SoFixer64"}' '${dumpFile.path} '$startAddress' '${dumpFile.parent}/${dumpFile.nameWithoutExtension}_fix.${dumpFile.extension}'")
-            .to(outList)
+            .to(outList, errList)
         return arrayOf(outList, errList)
     }
 }

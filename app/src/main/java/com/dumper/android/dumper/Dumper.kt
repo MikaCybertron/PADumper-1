@@ -4,6 +4,7 @@ import androidx.core.text.isDigitsOnly
 import com.dumper.android.utils.DEFAULT_DIR
 import com.dumper.android.utils.Memory
 import com.dumper.android.utils.toHex
+import com.dumper.android.utils.toMB
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.RandomAccessFile
@@ -46,20 +47,33 @@ class Dumper(private val pkg: String) {
 
                 val inputAccess = RandomAccessFile("/proc/${mem.pid}/mem", "r")
                 inputAccess.channel.run {
-                    val buffer = ByteBuffer.allocate(mem.size.toInt())
-                    read(buffer, mem.sAddress)
-                    outputStream.write(buffer.array())
-                    close()
+                    // Check if mem.size under 500MB
+                    if (mem.size < 500L.toMB()) {
+                        val buffer = ByteBuffer.allocate(mem.size.toInt())
+                        read(buffer, mem.sAddress)
+                        outputStream.write(buffer.array())
+                        close()
+                    } else {
+                        throw Exception("Size of memory is too big")
+                    }
                 }
 
                 outputStream.flush()
                 inputAccess.close()
                 outputStream.close()
 
-//                if (file.contains(".so") and autoFix) {
-//                    log.appendLine("Fixing...")
-//                    log.appendLine(Fixer(nativeDir!!, pathOut, mem.sAddress.toHex()).fixDump())
-//                }
+                if (!file.contains(".dat") && autoFix) {
+                    log.appendLine("Fixing...")
+                    val is32bit = mem.sAddress.toHex().length == 8
+                    val fixer = Fixer.fixDump(nativeDir!!, pathOut, mem.sAddress.toHex(), is32bit)
+                    // Check output fixer and error fixer
+                    if (fixer[0].isNotEmpty()) {
+                        log.appendLine("Fixer output : \n${fixer[0].joinToString("\n")}")
+                    }
+                    if (fixer[1].isNotEmpty()) {
+                        log.appendLine("Fixer error : \n${fixer[1].joinToString("\n")}")
+                    }
+                }
                 log.appendLine("Done: ${pathOut.absolutePath}")
             }
         } catch (e: Exception) {

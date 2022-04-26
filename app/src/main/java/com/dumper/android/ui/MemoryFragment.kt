@@ -75,7 +75,7 @@ class MemoryFragment : Fragment() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Select process")
             .setSingleChoiceItems(appNames.toTypedArray(), -1) { dialog, which ->
-                memBinding.processText.editText!!.setText(list[which].processName)
+                memBinding.processText.editText?.setText(list[which].processName)
                 dialog.dismiss()
             }
             .show()
