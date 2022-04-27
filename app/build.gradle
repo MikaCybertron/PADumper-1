@@ -19,6 +19,35 @@ android {
         }
     }
 
+    signingConfigs {
+        debug {
+            storeFile file("keystore.jks")
+            keyAlias "PADumper"
+            storePassword "012345"
+            keyPassword "012345"
+        }
+        release {
+            storeFile file("keystore.jks")
+            keyAlias "PADumper"
+            storePassword "012345"
+            keyPassword "012345"
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
