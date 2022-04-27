@@ -3,16 +3,14 @@ package com.dumper.android.core
 import android.content.Intent
 import android.os.*
 import android.util.Log
-import com.afollestad.materialdialogs.utils.MDUtil.getStringArray
 import com.dumper.android.dumper.Dumper
-import com.dumper.android.process.Process
+import com.dumper.android.dumper.process.Process
 import com.dumper.android.utils.TAG
 import com.topjohnwu.superuser.ipc.RootService
 
 
 class RootServices : RootService(), Handler.Callback {
     override fun onBind(intent: Intent): IBinder {
-        Log.d(TAG, "MSGService: onBind")
         val h = Handler(Looper.getMainLooper(), this)
         val m = Messenger(h)
         return m.binder
@@ -34,23 +32,21 @@ class RootServices : RootService(), Handler.Callback {
                 reply.what = MSG_DUMP_PROCESS
                 val logOutput = StringBuilder()
                 val process = requestData.getString(PROCESS_NAME)
-                val fileName = requestData.getStringArray(LIST_FILE)
+                val listFile = requestData.getStringArray(LIST_FILE)
                 val isAutoFix = requestData.getBoolean(IS_FIX_NAME, false)
-                val nativeDir = requestData.getString(LIBRARY_DIR_NAME)
-                if (process != null && fileName != null) {
+                if (process != null && listFile != null) {
                     val dumper = Dumper(process)
-                    for (file in fileName.iterator()) {
+                    for (file in listFile) {
                         dumper.file = file
-                        logOutput.appendLine(dumper.dumpFile(isAutoFix, nativeDir))
+                        logOutput.appendLine(dumper.dumpFile(isAutoFix))
                     }
-
                     data.putString(DUMP_LOG, logOutput.toString())
                 } else {
-                    data.putString(DUMP_LOG, "Data Error!")
+                    data.putString(DUMP_LOG, "[ERROR] Data Error!")
                 }
             }
             else -> {
-                data.putString("result", "Unknown command")
+                data.putString(DUMP_LOG, "[ERROR] Unknown command")
             }
         }
 
@@ -64,7 +60,6 @@ class RootServices : RootService(), Handler.Callback {
     }
 
     override fun onUnbind(intent: Intent): Boolean {
-        Log.d(TAG, "MSGService: onUnbind, client process unbound")
         return false
     }
 

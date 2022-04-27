@@ -9,7 +9,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import com.dumper.android.core.MainActivity
 import com.dumper.android.databinding.FragmentMemoryBinding
-import com.dumper.android.process.ProcessData
+import com.dumper.android.dumper.process.ProcessData
 import com.dumper.android.ui.viewmodel.ConsoleViewModel
 import com.dumper.android.ui.viewmodel.MemoryViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder

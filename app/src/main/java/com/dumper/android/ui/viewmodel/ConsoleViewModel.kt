@@ -4,7 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 class ConsoleViewModel : ViewModel() {
-    val console = MutableLiveData<String>("")
+    val console = MutableLiveData("")
 
     fun append(text: String) {
         console.value = console.value + text

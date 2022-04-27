@@ -5,8 +5,7 @@ import android.os.*
 import android.widget.Toast
 import com.dumper.android.core.MainActivity
 import com.dumper.android.core.RootServices
-import com.dumper.android.process.ProcessData
-import com.dumper.android.ui.ConsoleFragment
+import com.dumper.android.dumper.process.ProcessData
 import com.dumper.android.ui.MemoryFragment
 
 class MSGReceiver(private val activity: MainActivity) : Handler.Callback {

@@ -1,4 +1,4 @@
-package com.dumper.android.process
+package com.dumper.android.dumper.process
 
 import android.app.ActivityManager
 import android.content.Context

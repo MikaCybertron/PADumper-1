@@ -2,7 +2,6 @@ package com.dumper.android.dumper
 
 import androidx.core.text.isDigitsOnly
 import com.dumper.android.utils.DEFAULT_DIR
-import com.dumper.android.utils.Memory
 import com.dumper.android.utils.toHex
 import com.dumper.android.utils.toMB
 import java.io.File
@@ -21,7 +20,7 @@ class Dumper(private val pkg: String) {
      * @param nativeDir require if autoFix is true, the native library directory
      * @return log of the dump
      */
-    fun dumpFile(autoFix: Boolean, nativeDir: String?): String {
+    fun dumpFile(autoFix: Boolean): String {
         val log = StringBuilder()
         try {
             getProcessID()
@@ -65,7 +64,7 @@ class Dumper(private val pkg: String) {
                 if (!file.contains(".dat") && autoFix) {
                     log.appendLine("Fixing...")
                     val is32bit = mem.sAddress.toHex().length == 8
-                    val fixer = Fixer.fixDump(nativeDir!!, pathOut, mem.sAddress.toHex(), is32bit)
+                    val fixer = Fixer.fixDump(pathOut, mem.sAddress.toHex(), is32bit)
                     // Check output fixer and error fixer
                     if (fixer[0].isNotEmpty()) {
                         log.appendLine("Fixer output : \n${fixer[0].joinToString("\n")}")
@@ -94,11 +93,11 @@ class Dumper(private val pkg: String) {
         if (files.exists()) {
             val lines = files.readLines()
             val startAddr = lines.find {
-                if (file == "global-metadata.dat")
-                    it.contains(file)
-                else
-                //libil2cpp startAddress must r-xp
-                    it.contains("r-xp") && it.contains(file)
+                return@find if (it.contains(file)) {
+                    if (!file.contains(".dat")) {
+                        it.contains("r-xp")
+                    } else true
+                } else false
             }
             val endAddr = lines.findLast { it.contains(file) }
             val regex = "\\p{XDigit}+-\\p{XDigit}+".toRegex()
@@ -108,12 +107,12 @@ class Dumper(private val pkg: String) {
             } else if (endAddr == null) {
                 throw Exception("End Address not found")
             } else {
-                regex.find(startAddr)!!.value.run {
-                    val result = split("-")
+                regex.find(startAddr)!!.value.let {
+                    val result = it.split("-")
                     mem.sAddress = result[0].toLong(16)
                 }
-                regex.find(endAddr)!!.value.run {
-                    val result = split("-")
+                regex.find(endAddr)!!.value.let {
+                    val result = it.split("-")
                     mem.eAddress = result[1].toLong(16)
                 }
             }

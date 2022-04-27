@@ -1,4 +1,4 @@
-package com.dumper.android.utils
+package com.dumper.android.dumper
 
 data class Memory(val pkg: String) {
     var pid: Int = 0

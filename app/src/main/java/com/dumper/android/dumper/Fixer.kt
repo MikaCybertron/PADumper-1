@@ -8,7 +8,10 @@ import java.io.File
 
 object Fixer {
 
-
+    /**
+     * Extract SoFixer into filesDir and
+     * set permissions to 777 so the file can be executed
+     */
     fun extractLibs(ctx: Context) {
         val libs = ctx.assets.list("SoFixer")
         libs?.forEach { lib ->
@@ -21,9 +24,15 @@ object Fixer {
         }
     }
 
-
+    /**
+     * Run SoFixer
+     * @param dumpFile the file to dump
+     * @param startAddress the start address of the dump
+     * @param is32 if the dump is 32 bit or 64 bit
+     * @return List of strings containing the results of the SoFixer
+     */
     fun fixDump(
-        nativeDir: String, dumpFile: File,
+        dumpFile: File,
         startAddress: String, is32: Boolean
     ): Array<List<String>> {
         val outList = mutableListOf<String>()
