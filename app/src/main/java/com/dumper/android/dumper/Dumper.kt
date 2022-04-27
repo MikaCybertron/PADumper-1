@@ -1,7 +1,9 @@
 package com.dumper.android.dumper
 
+import android.util.Log
 import androidx.core.text.isDigitsOnly
 import com.dumper.android.utils.DEFAULT_DIR
+import com.dumper.android.utils.TAG
 import com.dumper.android.utils.toHex
 import com.dumper.android.utils.toMB
 import java.io.File
@@ -16,22 +18,31 @@ class Dumper(private val pkg: String) {
     /**
      * Dump the memory to a file
      *
-     * @param autoFix if true, the dumped file will be fixed after dumping
-     * @param nativeDir require if autoFix is true, the native library directory
+     * @param autoFix if `true` the dumped file will be fixed after dumping
      * @return log of the dump
      */
     fun dumpFile(autoFix: Boolean): String {
         val log = StringBuilder()
         try {
-            getProcessID()
-
-            log.appendLine("PID : ${mem.pid}")
-            parseMap()
-            if (mem.eAddress < mem.sAddress) {
-                throw Exception("Failed parsing startAddress & endAddress")
+            mem.pid = getProcessID()
+            if (mem.pid == 0) {
+                log.append("[ERROR] Failed to get process ID\n")
+                return log.toString()
             }
 
+            val map = parseMap()
+            map.forEach {
+                if (it == 0L) {
+                    log.append("[ERROR] Failed to get memory map of $pkg\n")
+                    return@forEach
+                }
+            }
+
+            mem.sAddress = map[0]
+            mem.eAddress = map[1]
             mem.size = mem.eAddress - mem.sAddress
+
+            log.appendLine("PID : ${mem.pid}")
             log.appendLine("FILE : $file")
             log.appendLine("Start Address : ${mem.sAddress.toHex()}")
             log.appendLine("End Address : ${mem.eAddress.toHex()}")
@@ -45,13 +56,13 @@ class Dumper(private val pkg: String) {
                 val outputStream = pathOut.outputStream()
 
                 val inputAccess = RandomAccessFile("/proc/${mem.pid}/mem", "r")
-                inputAccess.channel.run {
+                inputAccess.channel.let {
                     // Check if mem.size under 500MB
                     if (mem.size < 500L.toMB()) {
                         val buffer = ByteBuffer.allocate(mem.size.toInt())
-                        read(buffer, mem.sAddress)
+                        it.read(buffer, mem.sAddress)
                         outputStream.write(buffer.array())
-                        close()
+                        it.close()
                     } else {
                         throw Exception("Size of memory is too big")
                     }
@@ -77,7 +88,7 @@ class Dumper(private val pkg: String) {
                 log.appendLine("Output: ${pathOut.parent}")
             }
         } catch (e: Exception) {
-            log.appendLine(e.stackTraceToString())
+            log.appendLine("[ERROR] ${e.message}")
             e.printStackTrace()
         }
         return log.toString()
@@ -88,51 +99,50 @@ class Dumper(private val pkg: String) {
      *
      * @throws FileNotFoundException if required file is not found in memory map
      */
-    private fun parseMap() {
+    private fun parseMap(): List<Long> {
+        val output = mutableListOf<Long>(0, 0)
         val files = File("/proc/${mem.pid}/maps")
         if (files.exists()) {
             val lines = files.readLines()
-            val startAddr = lines.find {
-                return@find if (it.contains(file)) {
-                    if (!file.contains(".dat")) {
-                        it.contains("r-xp")
-                    } else true
-                } else false
-            }
-            val endAddr = lines.findLast { it.contains(file) }
-            val regex = "\\p{XDigit}+-\\p{XDigit}+".toRegex()
 
-            if (startAddr == null) {
-                throw Exception("Start Address not found")
-            } else if (endAddr == null) {
-                throw Exception("End Address not found")
-            } else {
-                regex.find(startAddr)!!.value.let {
-                    val result = it.split("-")
-                    mem.sAddress = result[0].toLong(16)
+            val lineStart = lines.find {
+
+                val map = MapLinux(it)
+                if (file.contains(".dat"))
+                    map.getPath().contains(file)
+                else {
+                    map.getPerms().contains("r-xp") && map.getPath().contains(file)
                 }
-                regex.find(endAddr)!!.value.let {
-                    val result = it.split("-")
-                    mem.eAddress = result[1].toLong(16)
-                }
-            }
+            } ?: throw FileNotFoundException("Unable find baseAddress of $file")
+
+            val mapStart = MapLinux(lineStart)
+
+            val lineEnd = lines.findLast {
+                val map = MapLinux(it)
+                mapStart.getInode() == map.getInode()
+            } ?: throw FileNotFoundException("Unable find endAddress of $file")
+
+            val mapEnd = MapLinux(lineEnd)
+            output[0] = mapStart.getStartAddress()
+            output[1] = mapEnd.getEndAddress()
         } else {
             throw FileNotFoundException("Failed To Open : ${files.path}")
         }
+        return output
     }
 
     /**
      * Get the process ID
      *
-     * @throws Exception if failed to get the process ID
+     * @throws Exception if dir "/proc" is empty
      * @throws FileNotFoundException if "/proc" failed to open
      */
-    private fun getProcessID() {
-        val dProc = File("/proc")
-        if (dProc.exists()) {
-            val dPID = dProc.listFiles()
+    private fun getProcessID(): Int {
+        val proc = File("/proc")
+        if (proc.exists()) {
+            val dPID = proc.listFiles()
             if (dPID.isNullOrEmpty()) {
-                throw Exception("Failed To Open : ${dProc.path}")
+                throw Exception("Failed To Open : ${proc.path}")
             }
             for (line in dPID) {
                 if (line.name.isDigitsOnly()) {
@@ -140,15 +150,15 @@ class Dumper(private val pkg: String) {
                     if (cmdline.exists()) {
                         val textCmd = cmdline.readText()
                         if (textCmd.contains(pkg)) {
-                            mem.pid = line.name.toInt()
-                            break
+                            return line.name.toInt()
                         }
                     }
                 }
             }
         } else {
-            throw FileNotFoundException("Failed To Open : ${dProc.path}")
+            throw FileNotFoundException("Failed To Open : ${proc.path}")
         }
+        return 0
     }
 }
 
